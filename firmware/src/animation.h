@@ -1,24 +1,68 @@
 #pragma once
 
-#include <FastLED.h>
+#include <OctoWS2811.h>
 
 const uint8_t kMatrixWidth = 12;
 const uint8_t kMatrixHeight = 24;
 #define NUM_LEDS    		(kMatrixWidth * kMatrixHeight)
-#define MAX_DIMENSION   ((kMatrixWidth>kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
+#define MAX_DIMENSION   ((kMatrixWidth > kMatrixHeight) ? kMatrixWidth : kMatrixHeight)
 
 struct Animation {
 public:
-  Animation(CRGB* leds) : leds{leds} {}
+  Animation(OctoWS2811* leds) : leds{leds} {}
 
   virtual void step() = 0;
 
 protected:
-  CRGB* leds;
+  OctoWS2811* leds;
+
+
+// Convert HSL (Hue, Saturation, Lightness) to RGB (Red, Green, Blue)
+//
+//   hue:        0 to 359 - position on the color wheel, 0=red, 60=orange,
+//                            120=yellow, 180=green, 240=blue, 300=violet
+//
+//   saturation: 0 to 100 - how bright or dull the color, 100=full, 0=gray
+//
+//   lightness:  0 to 100 - how light the color is, 100=white, 50=color, 0=black
+//
+int makeColor(unsigned int hue, unsigned int saturation, unsigned int lightness)
+{
+	unsigned int red, green, blue;
+	unsigned int var1, var2;
+
+	if (hue > 359) hue = hue % 360;
+	if (saturation > 100) saturation = 100;
+	if (lightness > 100) lightness = 100;
+
+	// algorithm from: http://www.easyrgb.com/index.php?X=MATH&H=19#text19
+	if (saturation == 0) {
+		red = green = blue = lightness * 255 / 100;
+	} else {
+		if (lightness < 50) {
+			var2 = lightness * (100 + saturation);
+		} else {
+			var2 = ((lightness + saturation) * 100) - (saturation * lightness);
+		}
+		var1 = lightness * 200 - var2;
+		red = h2rgb(var1, var2, (hue < 240) ? hue + 120 : hue - 240) * 255 / 600000;
+		green = h2rgb(var1, var2, hue) * 255 / 600000;
+		blue = h2rgb(var1, var2, (hue >= 120) ? hue - 120 : hue + 240) * 255 / 600000;
+	}
+	return (red << 16) | (green << 8) | blue;
+}
+
+unsigned int h2rgb(unsigned int v1, unsigned int v2, unsigned int hue)
+{
+	if (hue < 60) return v1 * 60 + (v2 - v1) * hue;
+	if (hue < 180) return v2 * 60;
+	if (hue < 240) return v1 * 60 + (v2 - v1) * (240 - hue);
+	return v1 * 60;
+}
+
 
   uint16_t XY(uint8_t x, uint8_t y) {
     // TOP is 0
-
   	// strips are serpentine layout
   	if (x & 0x01) {
   		// backwards
@@ -28,16 +72,16 @@ protected:
   	}
   }
 
-  uint16_t revXY(uint8_t x, uint8_t y) {
-    // BOTTOM is 0
-
-  	// strips are serpentine layout
-  	if (x & 0x01) {
-  		return (x * kMatrixHeight) + y;
-  	} else {
-  		// backwards
-  		return (x * kMatrixHeight) + (kMatrixHeight - 1 - y);
-  	}
-  }
+  // uint16_t revXY(uint8_t x, uint8_t y) {
+  //   // BOTTOM is 0
+  //
+  // 	// strips are serpentine layout
+  // 	if (x & 0x01) {
+  // 		return (x * kMatrixHeight) + y;
+  // 	} else {
+  // 		// backwards
+  // 		return (x * kMatrixHeight) + (kMatrixHeight - 1 - y);
+  // 	}
+  // }
 
 };

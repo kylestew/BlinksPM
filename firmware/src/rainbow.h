@@ -2,34 +2,44 @@
 
 #include "animation.h"
 
-struct Rainbow : Animation {
+struct Sandbox : Animation {
 public:
-  Rainbow(CRGB* leds) : Animation(leds) {
-    // pick a random speed and hue step
-    // hue step how much the rainbow color shifts over each LED
-    hueStep = random(2, 16);
-    speed = (random(2000) / 500.0f) + 0.5f; // [0.5 - 3.5]
+  Sandbox(OctoWS2811* leds) : Animation(leds) {
+    for (int i=0; i<180; i++) {
+      int hue = i * 2;
+      int saturation = 100;
+      int lightness = 2;
+      // pre-compute the 180 rainbow colors
+      rainbowColors[i] = makeColor(hue, saturation, lightness);
+    }
   }
 
   void step() override {
-    // TODO: doesn't deal with surpentine
-    fill_rainbow(leds, NUM_LEDS, hue, hueStep);
-
-    addGlitter(80);
-
-    hue += speed;
+    rainbow(24);
   }
 
 private:
-  float hue = 0;
-  uint8_t hueStep = 0;
-  float speed = 0.0f;
+  int rainbowColors[180];
+  int color = 0;
 
-
-  void addGlitter(fract8 chanceOfGlitter) {
-    if (random8() < chanceOfGlitter) {
-      leds[ random16(NUM_LEDS) ] += CRGB::White;
+  // phaseShift is the shift between each row.  phaseShift=0
+  // causes all rows to show the same colors moving together.
+  // phaseShift=180 causes each row to be the opposite colors
+  // as the previous.
+  //
+  // cycleTime is the number of milliseconds to shift through
+  // the entire 360 degrees of the color wheel:
+  // Red -> Orange -> Yellow -> Green -> Blue -> Violet -> Red
+  //
+  void rainbow(int phaseShift) {
+    int x, y;
+    for (x = 0; x < kMatrixWidth; x++) {
+      for (y = 0; y < kMatrixHeight; y++) {
+        int index = (color + x + y*phaseShift/2) % 180;
+        leds->setPixel(XY(x, y), rainbowColors[index]);
+      }
     }
+    color++;
   }
 
 };
