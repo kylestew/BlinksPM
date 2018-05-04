@@ -15,7 +15,7 @@ public:
   }
 
   void step() override {
-    rainbow(24);
+    rainbow(12);
   }
 
 private:
@@ -36,7 +36,10 @@ private:
     for (x = 0; x < kMatrixWidth; x++) {
       for (y = 0; y < kMatrixHeight; y++) {
         int index = (color + x + y*phaseShift/2) % 180;
-        leds->setPixel(XY(x, y), rainbowColors[index]);
+
+        // leds->setPixel(XY(x, y), rainbowColors[index]);
+        setPixel(x, y, 255, 255, 0);
+
       }
     }
     color++;

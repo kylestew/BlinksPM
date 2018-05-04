@@ -2,13 +2,13 @@
 
 #include "animation.h"
 
-struct Sandbox : Animation {
+struct Rainbow : Animation {
 public:
-  Sandbox(OctoWS2811* leds) : Animation(leds) {
+  Rainbow(OctoWS2811* leds) : Animation(leds) {
     for (int i=0; i<180; i++) {
       int hue = i * 2;
       int saturation = 100;
-      int lightness = 2;
+      int lightness = 20;
       // pre-compute the 180 rainbow colors
       rainbowColors[i] = makeColor(hue, saturation, lightness);
     }
